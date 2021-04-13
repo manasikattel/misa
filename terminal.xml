@@ -1,0 +1,5 @@
+<application>
+  <component name="TerminalOptionsProvider">
+    <option name="myShellPath" value="cmd.exe  &quot;/K&quot;  &quot;C:\Users\maraw\Anaconda3\Scripts\activate.bat&quot;  &quot;C:\Users\maraw\Anaconda3&quot;" />
+  </component>
+</application>
