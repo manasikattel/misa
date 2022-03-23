@@ -34,6 +34,10 @@
           <option name="url" value="https://github.com/Chrisini/Meduni_Multitask" />
           <option name="userName" value="" />
         </UrlAndUserName>
+        <UrlAndUserName>
+          <option name="url" value="https://github.com/Chrisini/feta_v3" />
+          <option name="userName" value="" />
+        </UrlAndUserName>
       </list>
     </option>
     <option name="cloneParentDir" value="D:\marwan\MSc\Chrisi" />
