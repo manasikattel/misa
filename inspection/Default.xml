@@ -31,6 +31,8 @@
     <option name="ignoredIdentifiers">
       <list>
         <option value="tracking.server.helpers" />
+        <option value="deep_learning_code.references.detection.coco_utils.transforms" />
+        <option value="transforms" />
       </list>
     </option>
   </inspection_tool>
