@@ -7,6 +7,7 @@
       <mapping pattern="cell_pose_utils.py" type="PLAIN_TEXT" />
       <mapping pattern="valpy" type="PLAIN_TEXT" />
       <mapping pattern=",env" type="PLAIN_TEXT" />
+      <mapping pattern="instance_seg_dataset" type="Python" />
     </extensionMap>
   </component>
 </application>
