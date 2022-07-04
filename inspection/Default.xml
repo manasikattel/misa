@@ -3,7 +3,7 @@
   <inspection_tool class="PyPackageRequirementsInspection" enabled="true" level="WARNING" enabled_by_default="true">
     <option name="ignoredPackages">
       <value>
-        <list size="56">
+        <list size="62">
           <item index="0" class="java.lang.String" itemvalue="tqdm" />
           <item index="1" class="java.lang.String" itemvalue="easydict" />
           <item index="2" class="java.lang.String" itemvalue="opencv-python" />
@@ -60,6 +60,12 @@
           <item index="53" class="java.lang.String" itemvalue="littleutils" />
           <item index="54" class="java.lang.String" itemvalue="async-generator" />
           <item index="55" class="java.lang.String" itemvalue="mkl-service" />
+          <item index="56" class="java.lang.String" itemvalue="pandas" />
+          <item index="57" class="java.lang.String" itemvalue="scikit_learn" />
+          <item index="58" class="java.lang.String" itemvalue="pytorch_metric_learning" />
+          <item index="59" class="java.lang.String" itemvalue="imblearn" />
+          <item index="60" class="java.lang.String" itemvalue="imbalanced_learn" />
+          <item index="61" class="java.lang.String" itemvalue="Pillow" />
         </list>
       </value>
     </option>
