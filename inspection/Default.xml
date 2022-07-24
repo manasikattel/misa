@@ -3,7 +3,7 @@
   <inspection_tool class="PyPackageRequirementsInspection" enabled="true" level="WARNING" enabled_by_default="true">
     <option name="ignoredPackages">
       <value>
-        <list size="65">
+        <list size="71">
           <item index="0" class="java.lang.String" itemvalue="tqdm" />
           <item index="1" class="java.lang.String" itemvalue="easydict" />
           <item index="2" class="java.lang.String" itemvalue="opencv-python" />
@@ -69,6 +69,12 @@
           <item index="62" class="java.lang.String" itemvalue="dataclasses" />
           <item index="63" class="java.lang.String" itemvalue="sklearn" />
           <item index="64" class="java.lang.String" itemvalue="typing-extensions" />
+          <item index="65" class="java.lang.String" itemvalue="kubernetes" />
+          <item index="66" class="java.lang.String" itemvalue="etcd3" />
+          <item index="67" class="java.lang.String" itemvalue="grpcio-tools" />
+          <item index="68" class="java.lang.String" itemvalue="requests" />
+          <item index="69" class="java.lang.String" itemvalue="google-auth" />
+          <item index="70" class="java.lang.String" itemvalue="omegaconf" />
         </list>
       </value>
     </option>
