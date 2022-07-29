@@ -54,6 +54,10 @@
           <option name="url" value="https://github.com/Project-MONAI/tutorials.git" />
           <option name="userName" value="" />
         </UrlAndUserName>
+        <UrlAndUserName>
+          <option name="url" value="https://github.com/kakou34/FL_breast_density.git" />
+          <option name="userName" value="" />
+        </UrlAndUserName>
       </list>
     </option>
     <option name="cloneParentDir" value="D:\marwan\MSc" />
