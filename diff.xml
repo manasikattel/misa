@@ -3,6 +3,7 @@
     <option name="PLACES_MAP">
       <entry key="CommitDialog">
         <PlaceSettings>
+          <option name="ENABLE_SYNC_SCROLL" value="false" />
           <option name="EXPAND_BY_DEFAULT" value="false" />
           <option name="SHOW_INDENT_LINES" value="true" />
           <option name="SHOW_WHITESPACES" value="true" />
