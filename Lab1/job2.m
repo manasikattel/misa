@@ -14,7 +14,7 @@ n    = length(biasreg) * length(biasfwhm) * length(cleanup) * length(mrf);
 i=1;
 
 nrun = 1;
-jobfile = {'job2.m'};
+jobfile = {'job_t.m'};
 
 for br=1:length(biasreg)
     for bf=1:length(biasfwhm)
@@ -23,10 +23,10 @@ for br=1:length(biasreg)
                     
                     filename = strcat("biasreg_",string(biasreg(br)), "_fwhm_",string(biasfwhm(bf)), "_cu_",string(cleanup(cu)), "_mrf_",string(mrf(mr)),".csv");
 
-                    str_1=strcat("sed -i '' 's/biasreg(br)/",string(biasreg(br)),"/g' job.m");
-                    str_2=strcat("sed -i '' 's/biasfwhm(bf)/",string(biasfwhm(bf)),"/g' job.m");
-                    str_3=strcat("sed -i '' 's/cleanup(cu)/",string(cleanup(cu)),"/g' job.m");
-                    str_4=strcat("sed -i '' 's/mrf(mr)/",string(mrf(mr)),"/g' job.m");
+                    str_1=strcat("sed 's/biasreg(br)/",string(biasreg(br)),"/g' job3.m > job_t.m");
+                    str_2=strcat("sed -i '' 's/biasfwhm(bf)/",string(biasfwhm(bf)),"/g' job_t.m");
+                    str_3=strcat("sed -i '' 's/cleanup(cu)/",string(cleanup(cu)),"/g' job_t.m");
+                    str_4=strcat("sed -i '' 's/mrf(mr)/",string(mrf(mr)),"/g' job_t.m");
 
                     system(str_1);
                     system(str_2);
@@ -40,10 +40,8 @@ for br=1:length(biasreg)
                     end
                     spm('defaults', 'FMRI');
                     spm_jobman('run', jobs, inputs{:});
-                    
-%                     dice_calc(filename);
-%                                             waitbar(i/n, H, sprintf('%d of %d', i, n));
-%                     i = i+1;
+                    disp('bye');
+                    dice_calc(filename);
 
                                    
             end

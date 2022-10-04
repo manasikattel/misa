@@ -1,9 +1,9 @@
 matlabbatch{1}.spm.spatial.preproc.channel.vols = {
        '/Users/manasikattel/misa/Lab1/data/1/T1.nii,1'
-       '/Users/manasikattel/misa/Lab1/data/2/T1.nii,1'
-       '/Users/manasikattel/misa/Lab1/data/3/T1.nii,1'
-       '/Users/manasikattel/misa/Lab1/data/4/T1.nii,1'
-       '/Users/manasikattel/misa/Lab1/data/5/T1.nii,1'
+%        '/Users/manasikattel/misa/Lab1/data/2/T1.nii,1'
+%        '/Users/manasikattel/misa/Lab1/data/3/T1.nii,1'
+%        '/Users/manasikattel/misa/Lab1/data/4/T1.nii,1'
+%        '/Users/manasikattel/misa/Lab1/data/5/T1.nii,1'
 %                                                        '/Users/manasikattel/misa/Lab1/data/1/T2_FLAIR.nii,1'
 %                                                        '/Users/manasikattel/misa/Lab1/data/2/T2_FLAIR.nii,1'
 %                                                        '/Users/manasikattel/misa/Lab1/data/3/T2_FLAIR.nii,1'
