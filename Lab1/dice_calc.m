@@ -8,7 +8,6 @@ T1_CSF_dice=[];
 FLAIR_GM_dice=[];
 FLAIR_WM_dice=[];
 FLAIR_CSF_dice=[];
-
 for ii = 1:numel(N)
     subfolder_name=fullfile(D,N{ii});
     T1_nii_filename = fullfile(subfolder_name,'T1.nii'); % improve by specifying the file extension.
@@ -64,37 +63,21 @@ for ii = 1:numel(N)
     disp('CSF Flair:');
     FLAIR_CSF_dice(end+1)=dice(flair_CSF,GT_CSF);
     disp(FLAIR_CSF_dice(end));
-
-mean(T1_GM_dice);
-std(T1_GM_dice);
-mean(T1_WM_dice);
-std(T1_WM_dice);
-mean(T1_CSF_dice);
-std(T1_CSF_dice);
-
-mean(FLAIR_GM_dice);
-std(FLAIR_GM_dice);
-mean(FLAIR_WM_dice);
-std(FLAIR_WM_dice);
-mean(FLAIR_CSF_dice)
-std(FLAIR_CSF_dice);
+ 
 end
 
+r_mat=cat(1,T1_GM_dice,T1_WM_dice,T1_CSF_dice,FLAIR_GM_dice,FLAIR_WM_dice,FLAIR_CSF_dice)';
+mean_mat=cat(1,mean(T1_GM_dice),mean(T1_WM_dice),mean(T1_CSF_dice),mean(FLAIR_GM_dice),mean(FLAIR_WM_dice),mean(FLAIR_CSF_dice))';
+std_mat=cat(1,std(T1_GM_dice),std(T1_WM_dice),std(T1_CSF_dice),std(FLAIR_GM_dice),std(FLAIR_WM_dice),std(FLAIR_CSF_dice))';
+mean_mat
+std_mat
 
+final_mat=cat(1,r_mat,mean_mat,std_mat);
 
-%    disp('GM T1:'); 
-%     disp(dice((class_GM_T1>0.5),GT_GM));
-%     disp('WM T1:'); 
-%     disp(dice((class_WM_T1>0.5),GT_WM));
-%     disp('CSF T1:'); 
-%     disp(dice((class_CSF_T1>0.5),GT_CSF));
-%     
-%     disp('GM FLAIR:'); 
-%     disp(dice((class_GM_Flair>0.5),GT_GM));
-%     disp('WM FLAIR:'); 
-%     disp(dice((class_WM_Flair>0.5),GT_WM));
-%     disp('CSF FLAIR:'); 
-%     disp(dice((class_CSF_Flair>0.5),GT_CSF));
+T = array2table(final_mat);
+T.Properties.VariableNames(1:6) = {'T1_GM','T1_WM','T1_CSF','FLAIR_GM','FLAIR_WM','FLAIR_CSF'};
+
+writetable(T,'light_g_30.csv')
 
 
 
