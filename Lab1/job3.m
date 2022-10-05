@@ -1,18 +1,28 @@
-matlabbatch{1}.spm.spatial.preproc.channel.vols = {
-       '/Users/manasikattel/misa/Lab1/data/1/T1.nii,1'
-%        '/Users/manasikattel/misa/Lab1/data/2/T1.nii,1'
-%        '/Users/manasikattel/misa/Lab1/data/3/T1.nii,1'
-%        '/Users/manasikattel/misa/Lab1/data/4/T1.nii,1'
-%        '/Users/manasikattel/misa/Lab1/data/5/T1.nii,1'
-%                                                        '/Users/manasikattel/misa/Lab1/data/1/T2_FLAIR.nii,1'
-%                                                        '/Users/manasikattel/misa/Lab1/data/2/T2_FLAIR.nii,1'
-%                                                        '/Users/manasikattel/misa/Lab1/data/3/T2_FLAIR.nii,1'
-%                                                        '/Users/manasikattel/misa/Lab1/data/4/T2_FLAIR.nii,1'
-%                                                        '/Users/manasikattel/misa/Lab1/data/5/T2_FLAIR.nii,1'
-       };
-matlabbatch{1}.spm.spatial.preproc.channel.biasreg = biasreg(br);
-matlabbatch{1}.spm.spatial.preproc.channel.biasfwhm = biasfwhm(bf);
-matlabbatch{1}.spm.spatial.preproc.channel.write = [0 1];
+matlabbatch{1}.spm.spatial.preproc.channel(1).vols = {
+                                                      '/Users/manasikattel/misa/Lab1/data/1/T1.nii,1'
+                                                      '/Users/manasikattel/misa/Lab1/data/2/T1.nii,1'
+                                                      '/Users/manasikattel/misa/Lab1/data/3/T1.nii,1'
+                                                      '/Users/manasikattel/misa/Lab1/data/4/T1.nii,1'
+                                                      '/Users/manasikattel/misa/Lab1/data/5/T1.nii,1'
+                                                      };
+matlabbatch{1}.spm.spatial.preproc.channel(1).biasreg = biasreg(br);
+matlabbatch{1}.spm.spatial.preproc.channel(1).biasfwhm = biasfwhm(bf);
+matlabbatch{1}.spm.spatial.preproc.channel(1).write = [0 1];
+
+
+matlabbatch{1}.spm.spatial.preproc.channel(2).vols = {
+                                                      '/Users/manasikattel/misa/Lab1/data/1/T2_FLAIR.nii,1'
+                                                      '/Users/manasikattel/misa/Lab1/data/2/T2_FLAIR.nii,1'
+                                                      '/Users/manasikattel/misa/Lab1/data/3/T2_FLAIR.nii,1'
+                                                      '/Users/manasikattel/misa/Lab1/data/4/T2_FLAIR.nii,1'
+                                                      '/Users/manasikattel/misa/Lab1/data/5/T2_FLAIR.nii,1'
+                                                      };
+matlabbatch{1}.spm.spatial.preproc.channel(2).biasreg = biasreg(br);
+matlabbatch{1}.spm.spatial.preproc.channel(2).biasfwhm = biasfwhm(bf);
+matlabbatch{1}.spm.spatial.preproc.channel(2).write = [0 1];
+
+
+
 matlabbatch{1}.spm.spatial.preproc.tissue(1).tpm = {'/Users/manasikattel/spm12/tpm/TPM.nii,1'};
 matlabbatch{1}.spm.spatial.preproc.tissue(1).ngaus = 2;
 matlabbatch{1}.spm.spatial.preproc.tissue(1).native = [1 0];

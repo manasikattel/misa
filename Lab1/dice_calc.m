@@ -1,4 +1,3 @@
-%%addpath C:\Users\maraw\OneDrive\Documents\MATLAB\spm12\spm12
 function [T] = dice_calc(file_name)
     D = 'data';
     S = dir(fullfile(D,'*'));
