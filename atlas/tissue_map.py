@@ -5,12 +5,13 @@ import numpy as np
 import matplotlib.pyplot as plt
 from tqdm import tqdm
 
-image_files = [i for i in Path("atlas/data/registered/training_images").rglob("*.nii")]
+output_folder = Path("../Elastix/training_reg/non_rigid_transform.txt/True/1000.nii.gz")
+
+image_files = [i for i in (output_folder / Path("training_images")).rglob("*.nii.gz")]
 label_files = [
-    Path(str(i.parent).replace("images", "labels")) / Path(i.stem + "_3C.nii")
+    Path(str(i.parent).replace("images", "labels")) / Path(Path(i.stem).stem + "_3C.nii.gz")
     for i in image_files
 ]
-
 
 def strip_skull(image, mask):
     gt_mask = copy.deepcopy(mask)
@@ -67,7 +68,9 @@ def calc_prob_sum1(image, label):
     plt.plot(range(len(p_intensity_gm)), p_intensity_gm, alpha=0.5, label="gm")
     plt.plot(range(len(p_intensity_wm)), p_intensity_wm, alpha=0.5, label="wm")
     plt.legend()
+    plt.savefig(output_folder/Path('intensity_prob.png'))
     plt.show()
+
 
 
 def calc_prob(image, label):
@@ -104,6 +107,8 @@ def calc_prob(image, label):
     plt.xlabel("Intensity")
     plt.ylabel("Probability")
     plt.legend(["CSF", "GM", "WM"])
+    plt.savefig(output_folder/Path('intensity_hist.png'))
+
     plt.show()
 
 
