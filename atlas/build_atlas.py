@@ -14,8 +14,7 @@ GMLabel = 3
 WMLabel = 2
 
 
-def get_atlas(images, labels):
-    images_stacked = np.stack(images)
+def get_atlas(labels):
     labels_stacked = np.stack(labels)
 
     csf_stacked = labels_stacked * (labels_stacked == CSFLabel)
@@ -26,6 +25,12 @@ def get_atlas(images, labels):
     prob_atlas_GM = np.average(gm_stacked, axis=0)
     prob_atlas_WM = np.average(wm_stacked, axis=0)
     return prob_atlas_CSF / CSFLabel, prob_atlas_GM / GMLabel, prob_atlas_WM / WMLabel
+
+
+def get_mean_image(images):
+    images_stacked = np.stack(images)
+    mean_image = np.average(images_stacked, axis=0)
+    return mean_image
 
 
 def main(image_files, label_files):
@@ -44,13 +49,19 @@ def main(image_files, label_files):
     plt.show()
     # plt.imsave(wm_atlas[:, :, 128], "wmatlas.png")
 
+    mean_image = get_mean_image(images)
+    plt.imshow(mean_image[:, :, 128])
+    plt.show()
+
     csf_atlas_nifti = nib.Nifti1Image(csf_atlas, affine=np.eye(4))
     gm_atlas_nifti = nib.Nifti1Image(gm_atlas, affine=np.eye(4))
     wm_atlas_nifti = nib.Nifti1Image(wm_atlas, affine=np.eye(4))
+    mean_image_nifti = nib.Nifti1Image(mean_image, affine=np.eye(4))
 
     nib.save(csf_atlas_nifti, save_dir / Path("atlasCSF.nii"))
     nib.save(gm_atlas_nifti, save_dir / Path("atlasGM.nii"))
     nib.save(wm_atlas_nifti, save_dir / Path("atlasWM.nii"))
+    nib.save(mean_image_nifti, save_dir / Path("mean_image.nii"))
 
 
 if __name__ == "__main__":
