@@ -85,8 +85,8 @@ for data_fixed, labels_fixed in zip(data_files, labels_files):
         df_values['rigid_mi'] = rigid_mutual_info_metric_value
         df_values['rigid_mse'] = rigid_mse_value
 
-        sitk.WriteParameterFile(elastixImageFilter.GetTransformParameterMap()[0], str(
-            out_folder / Path('rigid_transform.txt')))
+        # sitk.WriteParameterFile(elastixImageFilter.GetTransformParameterMap()[0], str(
+        #     out_folder / Path('rigid_transform.txt')))
 
         ###############################Affine######################
         elastixImageFilter = sitk.ElastixImageFilter()
@@ -114,8 +114,8 @@ for data_fixed, labels_fixed in zip(data_files, labels_files):
         df_values['affine_mi'] = affine_mutual_info_metric_value
         df_values['affine_mse'] = affine_mse_value
 
-        sitk.WriteParameterFile(elastixImageFilter.GetTransformParameterMap()[0],
-                                str(out_folder / Path('affine_transform.txt')))
+        # sitk.WriteParameterFile(elastixImageFilter.GetTransformParameterMap()[0],
+        #                         str(out_folder / Path('affine_transform.txt')))
 
         ################Non Rigid Registration###############
         elastixImageFilter = sitk.ElastixImageFilter()
@@ -140,10 +140,10 @@ for data_fixed, labels_fixed in zip(data_files, labels_files):
         non_rigid_mse_value = Reg_MSE.MetricEvaluate(fixed_image, non_rigid_out_img)
         df_values['non_rigid_mi'] = non_rigid_mutual_info_metric_value
         df_values['non_rigid_mse'] = non_rigid_mse_value
-        sitk.WriteParameterFile(elastixImageFilter.GetTransformParameterMap()[0],
-                                str(out_folder / Path('non_rigid_transform.txt')))
+        # sitk.WriteParameterFile(elastixImageFilter.GetTransformParameterMap()[0],
+        #                         str(out_folder / Path('non_rigid_transform.txt')))
         df_values_list.append(df_values)
         # exit()
-df = pd.DataFrame(df_values_list)
-df.to_csv('reg_results_2.csv')
+# df = pd.DataFrame(df_values_list)
+# df.to_csv('reg_results_2.csv')
 print(1)

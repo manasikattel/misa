@@ -22,12 +22,17 @@ use_mask = True
 
 # data_files[0]
 
-reg_methods = ['affine_transform.txt', 'non_rigid_transform.txt', 'rigid_transform.txt']
-reg_param_texts = ['affine', 'bspline', 'rigid', ]
+# reg_methods = ['affine_transform.txt', 'non_rigid_transform.txt', 'rigid_transform.txt']
+# reg_param_texts = ['affine', 'bspline', 'rigid', ]
+
+reg_methods = ['non_rigid_transform.txt']
+reg_param_texts = ['bspline' ]
+
+
 transformation_mask_path = '../reg_affine_bspline_rigid'
 ##put it in folders all labels and fixed
 
-for reg_method, reg_param_text in zip(reg_methods[1:], reg_param_texts[1:]):
+for reg_method, reg_param_text in zip(reg_methods, reg_param_texts):
 
     for data_fixed, fixed_label_file in zip(data_files[:1], labels_files[:1]):
         fixed_image = sitk.ReadImage(os.path.join(images_path, data_fixed))
