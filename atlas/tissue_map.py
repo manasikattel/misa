@@ -5,13 +5,15 @@ import numpy as np
 import matplotlib.pyplot as plt
 from tqdm import tqdm
 
-output_folder = Path("../Elastix/training_reg/non_rigid_transform.txt/True/1000.nii.gz")
+output_folder = Path("Elastix/training_reg/non_rigid_transform.txt/True/1000.nii.gz")
 
 image_files = [i for i in (output_folder / Path("training_images")).rglob("*.nii.gz")]
 label_files = [
-    Path(str(i.parent).replace("images", "labels")) / Path(Path(i.stem).stem + "_3C.nii.gz")
+    Path(str(i.parent).replace("images", "labels"))
+    / Path(Path(i.stem).stem + "_3C.nii.gz")
     for i in image_files
 ]
+
 
 def strip_skull(image, mask):
     gt_mask = copy.deepcopy(mask)
@@ -31,7 +33,7 @@ def visualize(image, label, filename):
     fig.savefig(filename.parent / Path(filename.stem + ".png"))
 
 
-def calc_prob_sum1(image, label):
+def calc_prob_sum1(image, label, visualize=True):
     image = image.astype(int)
 
     csf = image * (label == 1)
@@ -64,13 +66,14 @@ def calc_prob_sum1(image, label):
     p_intensity_wm = np.bincount(wm, minlength=np.amax(onlybrain) + 1) / intensity_hist
 
     # / intensity_hist
-    plt.plot(range(len(p_intensity_csf)), p_intensity_csf, alpha=0.5, label="csf")
-    plt.plot(range(len(p_intensity_gm)), p_intensity_gm, alpha=0.5, label="gm")
-    plt.plot(range(len(p_intensity_wm)), p_intensity_wm, alpha=0.5, label="wm")
-    plt.legend()
-    plt.savefig(output_folder/Path('intensity_prob.png'))
-    plt.show()
-
+    if visualize:
+        plt.plot(range(len(p_intensity_csf)), p_intensity_csf, alpha=0.5, label="csf")
+        plt.plot(range(len(p_intensity_gm)), p_intensity_gm, alpha=0.5, label="gm")
+        plt.plot(range(len(p_intensity_wm)), p_intensity_wm, alpha=0.5, label="wm")
+        plt.legend()
+        plt.savefig(output_folder / Path("intensity_prob.png"))
+        plt.show()
+    return p_intensity_wm, p_intensity_gm, p_intensity_csf
 
 
 def calc_prob(image, label):
@@ -107,7 +110,7 @@ def calc_prob(image, label):
     plt.xlabel("Intensity")
     plt.ylabel("Probability")
     plt.legend(["CSF", "GM", "WM"])
-    plt.savefig(output_folder/Path('intensity_hist.png'))
+    plt.savefig(output_folder / Path("intensity_hist.png"))
 
     plt.show()
 
@@ -117,7 +120,7 @@ def main(image_files, label_files):
     labels = [nib.load(i).get_fdata() for i in label_files]
     skull_stripped = [strip_skull(images[i], labels[i]) for i in range(len(images))]
 
-    calc_prob(np.stack(skull_stripped), np.stack(labels))
+    # calc_prob(np.stack(skull_stripped), np.stack(labels))
     calc_prob_sum1(np.stack(skull_stripped), np.stack(labels))
 
 
