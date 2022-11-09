@@ -15,17 +15,22 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 
+# which image to register to which /mean intensity to test or test to mean intensity
+
+
 class EM:
-    def __init__(self, img, init_type, n_clusters, dim):
+    def __init__(self, img, atlas_model, init_type, n_clusters, dim):
         self.orig_data = img
-        #backgroud removal and not used while clustering (a dense cluster with all zeros)
+        # backgroud removal and not used while clustering (a dense cluster with all zeros)
         self.nz_indices = [i for i, x in enumerate(img) if x.any()]
         self.data = img[self.nz_indices]
+        self.atlas_model = atlas_model[self.nz_indices]
         self.dim = dim
         self.n_clusters = n_clusters
         self.log_likelihood_arr = []
         self.init_type = init_type
         self.k_means_time = 0
+        self.atlas_time = 0
         self.init()
         self.responsibilities = None
         self.log_likelihood = 0
@@ -37,6 +42,13 @@ class EM:
             self.mean_s, self.cov_s, self.pi_s = self.init_random(self.data, self.n_clusters)
         elif self.init_type == 'kmeans':
             self.mean_s, self.cov_s, self.pi_s = self.init_kmeans(self.data, self.n_clusters)
+        elif self.init_type == 'atlas':
+            logger.info('using atlas init')
+            self.mean_s, self.cov_s, self.pi_s = self.init_atlas_model(self.data, self.atlas_model, self.n_clusters)
+        elif self.init_type == 'tissue':
+            self.mean_s, self.cov_s, self.pi_s = self.init_tissue_model(self.data,self.tissue_model,self.n_clusters)
+        elif self.init_type == 'atlas_tissue':
+            self.mean_s, self.cov_s, self.pi_s = self.init_atlas_tissue_model(self.data, self.n_clusters)
         else:
             raise Exception("Init Type not defined")
 
@@ -75,6 +87,35 @@ class EM:
         self.kmeans_mask = self.mask_from_recovered(recovered_img)
         return mean_s, cov_s, pi_s
 
+    def init_tissue_model(self, data, tissue_model, n_clusters):
+        # read from pickle file
+        mean_s, cov_s, pi_s = self.m_step(data, tissue_model, n_clusters)
+        # do same logic as manasi
+        start_time = time.time()
+        tissue_model_labels = np.argmax(tissue_model, axis=1)
+        self.tissue_Time = (time.time() - start_time)
+
+        tissue_model_mask = self.get_segm_mask(mean_s, tissue_model_labels, self.orig_data, self.nz_indices)
+        self.tissue_model_mask = self.mask_from_recovered(tissue_model_mask)
+
+        return mean_s, cov_s, pi_s
+
+    def init_atlas_model(self, data, atlas_model, n_clusters):
+        mean_s, cov_s, pi_s = self.m_step(data, atlas_model, n_clusters)
+
+        start_time = time.time()
+        atlas_labels = np.argmax(atlas_model, axis=1)
+        self.atlas_time = (time.time() - start_time)
+
+        atlas_model_mask = self.get_segm_mask(mean_s, atlas_labels, self.orig_data, self.nz_indices)
+        self.atlas_model_mask = self.mask_from_recovered(atlas_model_mask)
+
+        return mean_s, cov_s, pi_s
+
+    def init_atlas_tissue_model(self, data):
+        self.atlas_tissue_model_mask = None
+        pass
+
     # expectation step for the EM algorithm
     def e_step(self, data, mu_s, cov_s, pi_s, n_clusters):
         posterior_probabilities = np.zeros((data.shape[0], n_clusters))
@@ -95,6 +136,7 @@ class EM:
             mu_s[k] = np.matmul(class_posterior, img) / np.sum(class_posterior)
             class_posterior_norm = class_posterior / np.sum(class_posterior)
             cov_s[k] = (class_posterior_norm[0, :] * np.transpose(img - mu_s[k])) @ (img - mu_s[k])
+
         pi_s = np.sum(posterior_probabilities, axis=0) / posterior_probabilities.shape[0]
         return mu_s, cov_s, pi_s
 
@@ -117,7 +159,6 @@ class EM:
         data_mean_replaced = np.array([element[0] for element in means])
         em_img = data_mean_replaced[labels]
         out_labels[nz_indices] = em_img
-
         img_recovered = out_labels.reshape(self.dim)
         return img_recovered
 
@@ -139,8 +180,9 @@ class EM:
             if visualize and iter_n % 20 == 0:
                 recover_img = self.get_segm_mask(self.mean_s, self.seg_labels, self.orig_data, self.nz_indices)
                 title = f'EM-Iter-{iter_n}'
-                plot_gmm(self.data, recover_img, self.mean_s, self.cov_s, title)
-                # plt.imshow(recover_img[:, :, 24], cmap=pylab.cm.cool)
+                # plot_gmm(self.data, recover_img, self.mean_s, self.cov_s, title)
+                plt.imshow(recover_img[:, :, 140], cmap=pylab.cm.cool)
+
                 plt.title('iter' + str(iter_n))
                 plt.show()
 
