@@ -40,7 +40,7 @@ def dice(im1, im2, empty_score=1.0):
     return 2.0 * intersection.sum() / im_sum
 
 
-def dice_coef_multilabel(y_true, y_pred,labels_mapping):
+def dice_coef_multilabel(y_true, y_pred):
     numLabels = np.unique(y_true)
     dice_list = []
     dis = lambda y, l: 1 if y == l else 0

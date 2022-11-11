@@ -139,13 +139,17 @@ class EM:
 
     # expectation step for the EM algorithm
     def e_step(self, data, mu_s, cov_s, pi_s, n_clusters):
-        posterior_probabilities = np.zeros((data.shape[0], n_clusters))
+        posterior_probabilities = np.zeros((data.shape[0], n_clusters), dtype=np.float64)
         for k in range(n_clusters):
             posterior_probabilities[:, k] = pi_s[k] * multivariate_normal.pdf(data, mean=mu_s[k], cov=cov_s[k],
                                                                               allow_singular=True)
-        if self.into_EM:
-            posterior_probabilities *= self.atlas_model[:, 1:]
+        posterior_probabilities = posterior_probabilities / np.sum(posterior_probabilities, axis=1).reshape(
+            (len(posterior_probabilities), 1))
 
+        if self.into_EM:
+            posterior_probabilities_2 = posterior_probabilities * self.atlas_model[:, 1:]
+            nz_indiz = np.where(np.sum(posterior_probabilities_2, axis=1) != 0.0)
+            posterior_probabilities[nz_indiz] = posterior_probabilities_2[nz_indiz]
         # normalize the posterior probabilities
         posterior_probabilities = posterior_probabilities / np.sum(posterior_probabilities, axis=1).reshape(
             (len(posterior_probabilities), 1))

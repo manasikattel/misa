@@ -91,7 +91,7 @@ for into_EM in [True, False]:
                     for init_type in init_types:
                         if atlas_type == 'mni' and init_type == 'kmeans':
                             continue
-                        print('Use T2:{}, init_type:{}, data_folder:{}'.format(use_T2, init_type, data_folder))
+                        print('Use T2:{}, init_type:{}, data_folder:{}, atlas into {}'.format(use_T2, init_type, data_folder,into_EM))
                         # keeping track of the results of every experiment
                         results_dict = {}
                         results_dict['use_T2'] = use_T2
