@@ -40,17 +40,15 @@ def dice(im1, im2, empty_score=1.0):
     return 2.0 * intersection.sum() / im_sum
 
 
-def dice_coef_multilabel(y_true, y_pred):
+def dice_coef_multilabel(y_true, y_pred,labels_mapping):
     numLabels = np.unique(y_true)
     dice_list = []
     dis = lambda y, l: 1 if y == l else 0
     vdis = np.vectorize(dis)
 
     for label in numLabels:
-
         y_p = vdis(y_pred, label)
         y_t = vdis(y_true, label)
-
         score = dice(y_t, y_p)
         dice_list.append(score)
 

@@ -19,13 +19,22 @@ logger.setLevel(logging.INFO)
 
 
 class EM:
-    def __init__(self, img, atlas_model, init_type, n_clusters, dim):
+    def __init__(self, img, atlas_model, init_type, n_clusters, dim, into_EM=False):
+        self.into_EM = into_EM
         self.orig_data = img
         # backgroud removal and not used while clustering (a dense cluster with all zeros)
         self.nz_indices = [i for i, x in enumerate(img) if x.any()]
         self.data = img[self.nz_indices]
-        self.atlas_model = atlas_model[self.nz_indices]
+        self.atlas_model = atlas_model[self.nz_indices, :]
         self.dim = dim
+
+        # computing atlas labels
+        atlas_labels = np.argmax(self.atlas_model, axis=1)
+        out_labels = np.zeros(self.orig_data.shape[0])
+        out_labels[self.nz_indices] = atlas_labels
+        img_recovered = out_labels.reshape(self.dim)
+        self.atlas_model_mask = img_recovered
+
         self.n_clusters = n_clusters
         self.log_likelihood_arr = []
         self.init_type = init_type
@@ -37,6 +46,8 @@ class EM:
         self.seg_labels = None
         self.em_time = 0
 
+        self.post_atlas_mask = None
+
     def init(self):
         if self.init_type == 'random':
             self.mean_s, self.cov_s, self.pi_s = self.init_random(self.data, self.n_clusters)
@@ -46,7 +57,7 @@ class EM:
             logger.info('using atlas init')
             self.mean_s, self.cov_s, self.pi_s = self.init_atlas_model(self.data, self.atlas_model, self.n_clusters)
         elif self.init_type == 'tissue':
-            self.mean_s, self.cov_s, self.pi_s = self.init_tissue_model(self.data,self.tissue_model,self.n_clusters)
+            self.mean_s, self.cov_s, self.pi_s = self.init_tissue_model(self.data, self.tissue_model, self.n_clusters)
         elif self.init_type == 'atlas_tissue':
             self.mean_s, self.cov_s, self.pi_s = self.init_atlas_tissue_model(self.data, self.n_clusters)
         else:
@@ -101,16 +112,26 @@ class EM:
         return mean_s, cov_s, pi_s
 
     def init_atlas_model(self, data, atlas_model, n_clusters):
-        mean_s, cov_s, pi_s = self.m_step(data, atlas_model, n_clusters)
+        atlas_model = atlas_model / np.sum(atlas_model, axis=1).reshape(
+            (len(atlas_model), 1))
+        mean_s, cov_s, pi_s = self.m_step(data, atlas_model[:, 1:], n_clusters)
 
         start_time = time.time()
+
+        # todo use background and +1
         atlas_labels = np.argmax(atlas_model, axis=1)
         self.atlas_time = (time.time() - start_time)
 
-        atlas_model_mask = self.get_segm_mask(mean_s, atlas_labels, self.orig_data, self.nz_indices)
-        self.atlas_model_mask = self.mask_from_recovered(atlas_model_mask)
-
         return mean_s, cov_s, pi_s
+
+    def get_post_atlas_mask(self):
+        new_responsiblities = self.responsibilities * self.atlas_model[:, 1:]
+        seg_labels = self.get_labels(new_responsiblities)
+        mean_s, cov_s, pi_s = self.m_step(self.data, new_responsiblities, self.n_clusters)
+
+        post_atlas_mask = self.get_segm_mask(mean_s, seg_labels, self.orig_data, self.nz_indices)
+        post_atlas_mask = self.mask_from_recovered(post_atlas_mask)
+        return post_atlas_mask
 
     def init_atlas_tissue_model(self, data):
         self.atlas_tissue_model_mask = None
@@ -122,9 +143,13 @@ class EM:
         for k in range(n_clusters):
             posterior_probabilities[:, k] = pi_s[k] * multivariate_normal.pdf(data, mean=mu_s[k], cov=cov_s[k],
                                                                               allow_singular=True)
+        if self.into_EM:
+            posterior_probabilities *= self.atlas_model[:, 1:]
+
         # normalize the posterior probabilities
         posterior_probabilities = posterior_probabilities / np.sum(posterior_probabilities, axis=1).reshape(
             (len(posterior_probabilities), 1))
+
         return posterior_probabilities
 
     # maximization step of the EM algorithm
@@ -157,6 +182,7 @@ class EM:
     def get_segm_mask(self, means, labels, orig_data, nz_indices):
         out_labels = np.zeros(orig_data.shape[0])
         data_mean_replaced = np.array([element[0] for element in means])
+        # todo check
         em_img = data_mean_replaced[labels]
         out_labels[nz_indices] = em_img
         img_recovered = out_labels.reshape(self.dim)
