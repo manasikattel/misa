@@ -19,21 +19,31 @@ logger.setLevel(logging.INFO)
 
 
 class EM:
-    def __init__(self, img, atlas_model, init_type, n_clusters, dim, into_EM=False):
+    def __init__(self, img, atlas_model_EM, init_type, n_clusters, dim, into_EM=False, atlas_model_init=None):
         self.into_EM = into_EM
         self.orig_data = img
         # backgroud removal and not used while clustering (a dense cluster with all zeros)
-        self.nz_indices = [i for i, x in enumerate(img) if x.any()]
-        self.data = img[self.nz_indices]
-        self.atlas_model = atlas_model[self.nz_indices, :]
+
+        self.nz_indices = [i for i, x in enumerate(atlas_model_init[:, 1:] * img) if x.any()]
         self.dim = dim
 
-        # computing atlas labels
-        atlas_labels = np.argmax(self.atlas_model, axis=1)
+        self.data = img[self.nz_indices]
+
+        self.atlas_model_init = atlas_model_init[self.nz_indices, :]
+        self.atlas_model_EM = atlas_model_EM[self.nz_indices, :]
+
+        atlas_labels = np.argmax(self.atlas_model_init, axis=1)
         out_labels = np.zeros(self.orig_data.shape[0])
         out_labels[self.nz_indices] = atlas_labels
         img_recovered = out_labels.reshape(self.dim)
         self.atlas_model_mask = img_recovered
+
+
+        self.atlas_model_init = self.atlas_model_init[:, 1:]
+        self.atlas_model_EM = self.atlas_model_EM[:, 1:]
+
+        self.atlas_model_EM = self.atlas_model_EM / np.sum(self.atlas_model_EM, axis=1).reshape(
+            (len(self.atlas_model_EM), 1))
 
         self.n_clusters = n_clusters
         self.log_likelihood_arr = []
@@ -55,11 +65,12 @@ class EM:
             self.mean_s, self.cov_s, self.pi_s = self.init_kmeans(self.data, self.n_clusters)
         elif self.init_type == 'atlas':
             logger.info('using atlas init')
-            self.mean_s, self.cov_s, self.pi_s = self.init_atlas_model(self.data, self.atlas_model, self.n_clusters)
+            self.mean_s, self.cov_s, self.pi_s = self.init_atlas_model(self.data, self.atlas_model_init, self.n_clusters)
         elif self.init_type == 'tissue':
-            self.mean_s, self.cov_s, self.pi_s = self.init_tissue_model(self.data, self.tissue_model, self.n_clusters)
+            self.mean_s, self.cov_s, self.pi_s = self.init_atlas_model(self.data, self.atlas_model_init, self.n_clusters)
         elif self.init_type == 'atlas_tissue':
-            self.mean_s, self.cov_s, self.pi_s = self.init_atlas_tissue_model(self.data, self.n_clusters)
+            self.mean_s, self.cov_s, self.pi_s = self.init_atlas_model(self.data, self.atlas_model_init,
+                                                                       self.n_clusters)
         else:
             raise Exception("Init Type not defined")
 
@@ -74,9 +85,9 @@ class EM:
     def mask_from_recovered(self, recovered_img):
         mean_values = np.unique(recovered_img)
         seg_mask = np.zeros_like(recovered_img)
-
         for i in range(len(mean_values)):
             seg_mask[recovered_img == mean_values[i]] = i
+
         return seg_mask
 
     # initalization the centeriod with kmeans
@@ -96,6 +107,10 @@ class EM:
         # mask from the first initalization (to check kmeans acc)
         recovered_img = self.get_segm_mask(mean_s, y, self.orig_data, self.nz_indices)
         self.kmeans_mask = self.mask_from_recovered(recovered_img)
+
+        self.e_kmeans_dict = self.get_dict_map(self.atlas_model_mask, self.kmeans_mask)
+        self.e_kmeans_sorted = {k: v for k, v in enumerate(np.argsort(mean_s, axis=0).squeeze())}
+
         return mean_s, cov_s, pi_s
 
     def init_tissue_model(self, data, tissue_model, n_clusters):
@@ -114,7 +129,7 @@ class EM:
     def init_atlas_model(self, data, atlas_model, n_clusters):
         atlas_model = atlas_model / np.sum(atlas_model, axis=1).reshape(
             (len(atlas_model), 1))
-        mean_s, cov_s, pi_s = self.m_step(data, atlas_model[:, 1:], n_clusters)
+        mean_s, cov_s, pi_s = self.m_step(data, atlas_model, n_clusters)
 
         start_time = time.time()
 
@@ -124,8 +139,20 @@ class EM:
 
         return mean_s, cov_s, pi_s
 
-    def get_post_atlas_mask(self):
-        new_responsiblities = self.responsibilities * self.atlas_model[:, 1:]
+    def get_post_atlas_mask(self, my_dict=None):
+        if my_dict:
+            new_responsiblities = np.zeros_like(self.responsibilities)
+            sorted_resp_dict = {k: v for k, v in enumerate(np.argsort(self.mean_s, axis=0).squeeze())}
+            for idx, key in enumerate(list(my_dict.keys())[1:]):
+                new_responsiblities[:, idx] = self.responsibilities[:,
+                                              sorted_resp_dict[key - 1]] * self.atlas_model_EM[:, idx]
+
+        else:
+            new_responsiblities = self.responsibilities * self.atlas_model_EM
+
+        new_responsiblities = new_responsiblities / np.sum(new_responsiblities, axis=1).reshape(
+            (len(new_responsiblities), 1))
+
         seg_labels = self.get_labels(new_responsiblities)
         mean_s, cov_s, pi_s = self.m_step(self.data, new_responsiblities, self.n_clusters)
 
@@ -147,9 +174,19 @@ class EM:
             (len(posterior_probabilities), 1))
 
         if self.into_EM:
-            posterior_probabilities_2 = posterior_probabilities * self.atlas_model[:, 1:]
-            nz_indiz = np.where(np.sum(posterior_probabilities_2, axis=1) != 0.0)
-            posterior_probabilities[nz_indiz] = posterior_probabilities_2[nz_indiz]
+            if self.init_type == 'kmeans':
+                new_responsiblities = np.zeros_like(posterior_probabilities)
+                for idx, key in enumerate(list(self.e_kmeans_dict.keys())[1:]):
+                    new_responsiblities[:, idx] = posterior_probabilities[:, idx] * self.atlas_model_EM[:,
+                                                                                    self.e_kmeans_sorted[key - 1]]
+                    # print(self.mean_s[idx], self.e_kmeans_sorted[key - 1])
+
+                posterior_probabilities = new_responsiblities
+            else:
+                posterior_probabilities = posterior_probabilities * self.atlas_model_EM
+            # nz_indiz = np.where(np.sum(posterior_probabilities_2, axis=1) != 0.0)
+            # posterior_probabilities[nz_indiz] = posterior_probabilities_2[nz_indiz]
+
         # normalize the posterior probabilities
         posterior_probabilities = posterior_probabilities / np.sum(posterior_probabilities, axis=1).reshape(
             (len(posterior_probabilities), 1))
@@ -167,6 +204,7 @@ class EM:
             cov_s[k] = (class_posterior_norm[0, :] * np.transpose(img - mu_s[k])) @ (img - mu_s[k])
 
         pi_s = np.sum(posterior_probabilities, axis=0) / posterior_probabilities.shape[0]
+
         return mu_s, cov_s, pi_s
 
     def get_labels(self, responsibilities):
@@ -237,3 +275,29 @@ class EM:
         logger.info('Converged at iter:{} with loglikelihood:{}'.format(iter_n, self.log_likelihood))
 
         return self.get_segm_mask(self.mean_s, self.seg_labels, self.orig_data, self.nz_indices), iter_n
+
+    def get_dict_map(self, seg_mask_atlas, seg_mask_em):
+        # check_CSF = (seg_mask_atlas == 1).astype(np.uint8) * seg_mask_em
+        check_GM = (seg_mask_atlas == 2).astype(np.uint8) * seg_mask_em
+        check_WM = (seg_mask_atlas == 3).astype(np.uint8) * seg_mask_em
+        #
+        # check_CSF, count_csf = np.unique(check_CSF, return_counts=True)
+        # count_csf = np.argsort(-count_csf)
+
+        check_GM, count_gm = np.unique(check_GM, return_counts=True)
+        count_gm = np.argsort(-count_gm)
+        #
+        check_WM, count_wm = np.unique(check_WM, return_counts=True)
+        count_wm = np.argsort(-count_wm)
+        #
+        # # 0 is always the background
+        # CSF_Label = count_csf[1]
+        GM_Label = count_gm[1]
+        WM_Label = count_wm[1]
+
+        CSF_Label = list(set([0, 1, 2, 3]).difference(set([0, GM_Label, WM_Label])))[0]
+
+        # my_dict = {0: 0, CSF_Label: 1, GM_Label: 3, WM_Label: 2}
+
+        my_dict = {0: 0, CSF_Label: 1, GM_Label: 3, WM_Label: 2}
+        return my_dict
