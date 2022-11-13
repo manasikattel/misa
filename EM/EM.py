@@ -22,22 +22,23 @@ class EM:
     def __init__(self, img, atlas_model_EM, init_type, n_clusters, dim, into_EM=False, atlas_model_init=None):
         self.into_EM = into_EM
         self.orig_data = img
-        # backgroud removal and not used while clustering (a dense cluster with all zeros)
 
-        self.nz_indices = [i for i, x in enumerate(atlas_model_init[:, 1:] * img) if x.any()]
+        # backgroud removal and not used while clustering (a dense cluster with all zeros)
+        self.nz_indices = [i for i, x in enumerate(atlas_model_init[:, 1:] * img * atlas_model_EM[:, 1:]) if x.any()]
         self.dim = dim
 
         self.data = img[self.nz_indices]
 
+        #atlas used for init is different than atlas used for EM
         self.atlas_model_init = atlas_model_init[self.nz_indices, :]
         self.atlas_model_EM = atlas_model_EM[self.nz_indices, :]
 
+        #getting the atlas seg mask (without EM)
         atlas_labels = np.argmax(self.atlas_model_init, axis=1)
         out_labels = np.zeros(self.orig_data.shape[0])
         out_labels[self.nz_indices] = atlas_labels
         img_recovered = out_labels.reshape(self.dim)
         self.atlas_model_mask = img_recovered
-
 
         self.atlas_model_init = self.atlas_model_init[:, 1:]
         self.atlas_model_EM = self.atlas_model_EM[:, 1:]
@@ -65,9 +66,11 @@ class EM:
             self.mean_s, self.cov_s, self.pi_s = self.init_kmeans(self.data, self.n_clusters)
         elif self.init_type == 'atlas':
             logger.info('using atlas init')
-            self.mean_s, self.cov_s, self.pi_s = self.init_atlas_model(self.data, self.atlas_model_init, self.n_clusters)
+            self.mean_s, self.cov_s, self.pi_s = self.init_atlas_model(self.data, self.atlas_model_init,
+                                                                       self.n_clusters)
         elif self.init_type == 'tissue':
-            self.mean_s, self.cov_s, self.pi_s = self.init_atlas_model(self.data, self.atlas_model_init, self.n_clusters)
+            self.mean_s, self.cov_s, self.pi_s = self.init_atlas_model(self.data, self.atlas_model_init,
+                                                                       self.n_clusters)
         elif self.init_type == 'atlas_tissue':
             self.mean_s, self.cov_s, self.pi_s = self.init_atlas_model(self.data, self.atlas_model_init,
                                                                        self.n_clusters)
@@ -133,13 +136,13 @@ class EM:
 
         start_time = time.time()
 
-        # todo use background and +1
         atlas_labels = np.argmax(atlas_model, axis=1)
         self.atlas_time = (time.time() - start_time)
 
         return mean_s, cov_s, pi_s
 
     def get_post_atlas_mask(self, my_dict=None):
+        #using the dict to map the responsibilities to the atlas
         if my_dict:
             new_responsiblities = np.zeros_like(self.responsibilities)
             sorted_resp_dict = {k: v for k, v in enumerate(np.argsort(self.mean_s, axis=0).squeeze())}
@@ -175,17 +178,14 @@ class EM:
 
         if self.into_EM:
             if self.init_type == 'kmeans':
+                #making sure that CSF atlas is multipled by CSF kmeans...etc
                 new_responsiblities = np.zeros_like(posterior_probabilities)
                 for idx, key in enumerate(list(self.e_kmeans_dict.keys())[1:]):
                     new_responsiblities[:, idx] = posterior_probabilities[:, idx] * self.atlas_model_EM[:,
                                                                                     self.e_kmeans_sorted[key - 1]]
-                    # print(self.mean_s[idx], self.e_kmeans_sorted[key - 1])
-
                 posterior_probabilities = new_responsiblities
             else:
                 posterior_probabilities = posterior_probabilities * self.atlas_model_EM
-            # nz_indiz = np.where(np.sum(posterior_probabilities_2, axis=1) != 0.0)
-            # posterior_probabilities[nz_indiz] = posterior_probabilities_2[nz_indiz]
 
         # normalize the posterior probabilities
         posterior_probabilities = posterior_probabilities / np.sum(posterior_probabilities, axis=1).reshape(

@@ -8,6 +8,9 @@ import logging
 import sys
 
 from metrics import dice_coef_multilabel
+
+from atlas.segm_tissue_models import segment_intensity_only, normalize
+
 logging.getLogger().addHandler(logging.StreamHandler(sys.stdout))
 import nibabel as nib
 from EM import EM
@@ -35,7 +38,7 @@ n_clusters = 3
 error = 0.1
 # to keep track for the results for ablation studies
 results_list = []
-output_path = Path('./test_results_3')
+output_path = Path('./with_tissue_model')
 output_path.mkdir(parents=True, exist_ok=True)
 
 use_tissue_model = False
@@ -58,42 +61,35 @@ init_types = ['tissue', 'atlas_tissue']
 # init_type = both/tissue models/kmeans
 # into_EM true/false if kmeans and into em==false do not run
 # check mni experiment missing
-for into_EM in [True, False]:
+tissue_maps = pd.read_csv("prob_df_no1_255.csv")
+# whteher u want the atlas  into EM or  not
+for into_EM in [True]:
+    # whether u want the prob. atlas to be ours or the mni one
     for atlas_type in ['ours', 'mni']:
+        #loading the atlas from the dict
         atlas_testing_path = Path(f'../Elastix/test_reg_atlas_{atlas_type}')
         for blur_sigma in blur_sigmas:
             for use_T2 in [False]:
                 for data_folder, labels_file in zip(data_files, labels_files):
 
-                    # tm_subject_path = Path(f'../Elastix/test_reg_atlas_tm') / Path(data_folder)
-                    # # load atlas for every test img
-                    # tissue_model_CSF, _ = read_img(tm_subject_path / Path('atlasCSF.nii.gz'))
-                    # tissue_model_GM, _ = read_img(tm_subject_path / Path('atlasGM.nii.gz'))
-                    # tissue_model_WM, _ = read_img(tm_subject_path / Path('atlasWM.nii.gz'))
 
                     atlas_subject_path = atlas_testing_path / Path(data_folder)
+
                     # load atlas for every test img
                     atlas_model_BG, _ = read_img(atlas_subject_path / Path('atlasBG.nii.gz'))
                     atlas_model_CSF, _ = read_img(atlas_subject_path / Path('atlasCSF.nii.gz'))
                     atlas_model_GM, _ = read_img(atlas_subject_path / Path('atlasGM.nii.gz'))
                     atlas_model_WM, _ = read_img(atlas_subject_path / Path('atlasWM.nii.gz'))
 
+                    #flatten the atlas for entry to the ME
                     atlas_model_BG = flatten_img(atlas_model_BG, mode='3d')
                     atlas_model_CSF = flatten_img(atlas_model_CSF, mode='3d')
                     atlas_model_GM = flatten_img(atlas_model_GM, mode='3d')
                     atlas_model_WM = flatten_img(atlas_model_WM, mode='3d')
 
-                    # make sure
+                    # stacking the atlases along the 2nd dim
                     atlas_model = np.stack((atlas_model_BG, atlas_model_CSF, atlas_model_GM, atlas_model_WM),
                                            axis=1).squeeze()
-
-                    tissue_model = np.stack((atlas_model_BG, atlas_model_CSF, atlas_model_GM, atlas_model_WM),
-                                            axis=1).squeeze()
-
-                    # tissue_model = np.stack((atlas_model_BG, tissue_model_CSF, tissue_model_WM, atlas_model_WM),
-                    #                         axis=1).squeeze()
-
-                    # del tissue_model_CSF, tissue_model_GM, tissue_model_WM
 
                     del atlas_model_BG, atlas_model_CSF, atlas_model_GM, atlas_model_WM
 
@@ -112,10 +108,19 @@ for into_EM in [True, False]:
 
                     gt[(gt != 0) & (gt != 1) & (gt != 2) & (gt != 3)] = 0
 
+                    # getting the features it can be T1 or (T1,T2)
+                    stacked_features, T1_masked, T2_masked = get_features(T1, T2, gt, use_T2)
+
+                    #getting the tissue model prob. map for the test set
+                    tissue_model, _ = segment_intensity_only(normalize(T1_masked, 255), tissue_maps)
+                    tissue_model = tissue_model.reshape(4, -1).transpose()
+
                     for init_type in init_types:
                         if atlas_type == 'mni' and init_type == 'kmeans' and into_EM == False:
                             continue
 
+                        #depending on the init type the atlas model will be sent
+                        #to the EM (DIFFERENT than the one multipled at the e_step)
                         if init_type == 'tissue':
                             atlas_model_init = tissue_model
                         elif init_type == 'atlas_tissue':
@@ -141,9 +146,6 @@ for into_EM in [True, False]:
                             'init_' + init_type + '_atlas_' + atlas_type + '_blurred_' + str(
                                 blur_sigma) + '_into_EM_' + str(into_EM))
                         out_folder.mkdir(parents=True, exist_ok=True)
-
-                        # getting the features it can be T1 or (T1,T2)
-                        stacked_features, T1_masked, T2_masked = get_features(T1, T2, gt, use_T2)
 
                         # saving the T1 masked image after removing skull
                         nib.save(nib.Nifti1Image(T1_masked, affine=T1_affine), out_folder / Path('T1_masked.nii'))
@@ -176,6 +178,7 @@ for into_EM in [True, False]:
                         seg_mask_em = em.mask_from_recovered(recovered_img)
                         seg_mask_atlas = em.atlas_model_mask
 
+                        #CSF/GM discrepancy mapping them with the atlas
                         check_CSF = (seg_mask_atlas == 1).astype(np.uint8) * seg_mask_em
                         check_GM = (seg_mask_atlas == 2).astype(np.uint8) * seg_mask_em
                         check_WM = (seg_mask_atlas == 3).astype(np.uint8) * seg_mask_em
@@ -198,12 +201,10 @@ for into_EM in [True, False]:
 
                         my_dict = {0: 0, CSF_Label: 1, GM_Label: 3, WM_Label: 2}
                         print(my_dict)
-                        seg_mask_em = np.vectorize(my_dict.get)(seg_mask_em)
 
-                        # print(my_dict)
                         if init_type == 'kmeans':
+                            seg_mask_em = np.vectorize(my_dict.get)(seg_mask_em)
                             seg_mask_kmeans = em.kmeans_mask
-                            # seg_mask_kmeans[np.isin(seg_mask_kmeans, list(my_dict.keys())) == 0] = 0
                             seg_mask_kmeans = np.vectorize(my_dict.get)(seg_mask_kmeans)
 
                             # saving the kmeans seg mask
@@ -221,6 +222,8 @@ for into_EM in [True, False]:
                             nib.save(nib.Nifti1Image(seg_mask_atlas, affine=gt_affine),
                                      out_folder / Path('atlas_mask.nii'))
                             my_dict_atlas = {0: 0, 1: 1, 2: 3, 3: 2}
+
+                            seg_mask_em = np.vectorize(my_dict_atlas.get)(seg_mask_em)
 
                             dice_list_atlas = dice_coef_multilabel(gt, np.vectorize(my_dict_atlas.get)(seg_mask_atlas))
                             results_dict['atlas_dice_CSF'] = dice_list_atlas[1]
@@ -263,23 +266,8 @@ for into_EM in [True, False]:
                         results_dict['em_dice_GM'] = dice_list_em[2]
                         results_dict['em_dice_WM'] = dice_list_em[3]
                         print(dice_list_em)
-                        # fig, (ax1, ax2, ax3) = plt.subplots(1, 3)
-                        #
-                        # ax1.imshow(T1_masked[:, :, 140])
-                        # # plt.show()
-                        # ax1.set_title('T1 image')
-                        #
-                        # ax2.imshow(gt[:, :, 140], cmap=pylab.cm.cool)
-                        # # plt.show()
-                        # ax2.set_title('Ground Truth')
-                        # ax3.imshow(recovered_img[:, :, 140], cmap=pylab.cm.cool)
-                        # ax3.set_title('Segmented Image')
-                        # plt.title(T1_fileName)
-                        # plt.tight_layout()
-                        # plt.show()
-
                         results_list.append(results_dict)
 
 # saving the results with the ablation to a dataframe
 df = pd.DataFrame(results_list)
-df.to_csv('results_kmeans_mni_ours_3.csv')
+df.to_csv('results_tissue_model_mni_ours_3.csv')
