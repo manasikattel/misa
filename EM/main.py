@@ -38,7 +38,7 @@ n_clusters = 3
 error = 0.1
 # to keep track for the results for ablation studies
 results_list = []
-output_path = Path('./with_tissue_model')
+output_path = Path('./new_challenge')
 output_path.mkdir(parents=True, exist_ok=True)
 
 use_tissue_model = False
@@ -49,8 +49,8 @@ visualize = False
 blur_sigmas = [None]
 # init_types = ['kmeans', 'random', 'atlas', 'tissue', 'atlas_tissue']
 # mean_intensity, _ = read_img('../Elastix/training_reg/non_rigid_transform.txt/True/1000.nii.gz/mean_image.nii')
-# init_types = ['atlas', 'kmeans']
-init_types = ['tissue', 'atlas_tissue']
+init_types = ['atlas', 'kmeans']
+# init_types = ['tissue', 'atlas_tissue']
 
 # kmeans init + mni + into
 # use (atlas_ours * atlas tissue model) init into_EM True/False
@@ -63,15 +63,15 @@ init_types = ['tissue', 'atlas_tissue']
 # check mni experiment missing
 tissue_maps = pd.read_csv("prob_df_no1_255.csv")
 # whteher u want the atlas  into EM or  not
-for into_EM in [True]:
+# todo run into_EM=False and atlas ours
+for into_EM in [False]:
     # whether u want the prob. atlas to be ours or the mni one
-    for atlas_type in ['ours', 'mni']:
-        #loading the atlas from the dict
-        atlas_testing_path = Path(f'../Elastix/test_reg_atlas_{atlas_type}')
+    for atlas_type in ['ours']:
+        # loading the atlas from the dict
+        atlas_testing_path = Path(f'../Elastix/training_ours_reg/')
         for blur_sigma in blur_sigmas:
             for use_T2 in [False]:
                 for data_folder, labels_file in zip(data_files, labels_files):
-
 
                     atlas_subject_path = atlas_testing_path / Path(data_folder)
 
@@ -81,7 +81,7 @@ for into_EM in [True]:
                     atlas_model_GM, _ = read_img(atlas_subject_path / Path('atlasGM.nii.gz'))
                     atlas_model_WM, _ = read_img(atlas_subject_path / Path('atlasWM.nii.gz'))
 
-                    #flatten the atlas for entry to the ME
+                    # flatten the atlas for entry to the ME
                     atlas_model_BG = flatten_img(atlas_model_BG, mode='3d')
                     atlas_model_CSF = flatten_img(atlas_model_CSF, mode='3d')
                     atlas_model_GM = flatten_img(atlas_model_GM, mode='3d')
@@ -111,16 +111,15 @@ for into_EM in [True]:
                     # getting the features it can be T1 or (T1,T2)
                     stacked_features, T1_masked, T2_masked = get_features(T1, T2, gt, use_T2)
 
-                    #getting the tissue model prob. map for the test set
+                    # getting the tissue model prob. map for the test set
                     tissue_model, _ = segment_intensity_only(normalize(T1_masked, 255), tissue_maps)
                     tissue_model = tissue_model.reshape(4, -1).transpose()
 
                     for init_type in init_types:
                         if atlas_type == 'mni' and init_type == 'kmeans' and into_EM == False:
                             continue
-
-                        #depending on the init type the atlas model will be sent
-                        #to the EM (DIFFERENT than the one multipled at the e_step)
+                        # depending on the init type the atlas model will be sent
+                        # to the EM (DIFFERENT than the one multipled at the e_step)
                         if init_type == 'tissue':
                             atlas_model_init = tissue_model
                         elif init_type == 'atlas_tissue':
@@ -178,7 +177,7 @@ for into_EM in [True]:
                         seg_mask_em = em.mask_from_recovered(recovered_img)
                         seg_mask_atlas = em.atlas_model_mask
 
-                        #CSF/GM discrepancy mapping them with the atlas
+                        # CSF/GM discrepancy mapping them with the atlas
                         check_CSF = (seg_mask_atlas == 1).astype(np.uint8) * seg_mask_em
                         check_GM = (seg_mask_atlas == 2).astype(np.uint8) * seg_mask_em
                         check_WM = (seg_mask_atlas == 3).astype(np.uint8) * seg_mask_em
@@ -270,4 +269,4 @@ for into_EM in [True]:
 
 # saving the results with the ablation to a dataframe
 df = pd.DataFrame(results_list)
-df.to_csv('results_tissue_model_mni_ours_3.csv')
+df.to_csv('results_tissue_model_into_em_false_ours_3.csv')

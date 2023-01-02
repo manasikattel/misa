@@ -4,22 +4,22 @@ from pathlib import Path
 import SimpleITK as sitk
 from SimpleITK.SimpleITK import ProcessObject
 
-images_path = Path('../training_set/training_images')
-labels_path = Path('../training_set/training_labels')
-masks_path = Path('../training_set/training_mask')
-use_mask = False
+images_path = Path('../TrainingValidationTestSets/Training_Set')
+# labels_path = Path('../training_set/training_labels')
+# masks_path = Path('../training_set/training_mask')
+# use_mask = False
 
 data_files = os.listdir(images_path)
-labels_files = os.listdir(labels_path)
-masks_files = os.listdir(masks_path)
+# labels_files = os.listdir(labels_path)
+# masks_files = os.listdir(masks_path)
 
-data_files.sort(key=lambda x: x.split('.')[0])
-labels_files.sort(key=lambda x: x.split('_')[0])
-masks_files.sort(key=lambda x: x.split('_')[0])
+# data_files.sort(key=lambda x: x.split('.')[0])
+# labels_files.sort(key=lambda x: x.split('_')[0])
+# masks_files.sort(key=lambda x: x.split('_')[0])
 
 vectorOfImages = sitk.VectorOfImage()
 
-origin = sitk.ReadImage(os.path.join(images_path, data_files[0]))
+# origin = sitk.ReadImage(os.path.join(images_path, data_files[0]))
 
 for filename in data_files:
     image = sitk.ReadImage(os.path.join(images_path, filename))

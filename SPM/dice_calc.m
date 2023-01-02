@@ -31,7 +31,7 @@ function [T] = dice_calc(file_name)
         class_BG_Flair= double(niftiread(fullfile(subfolder_name,'c6T2_FLAIR.nii')))/double(255);
         
         [mx_flair,pmx_flair]=max(cat(4,class_CSF_Flair,class_GM_Flair,class_WM_Flair,class_B_Flair,class_ST_Flair,class_BG_Flair),[],4);
-    
+
         GT_CSF = (GT==1);
         GT_GM = (GT==2);
         GT_WM = (GT==3);
@@ -69,9 +69,11 @@ function [T] = dice_calc(file_name)
     r_mat=cat(1,T1_GM_dice,T1_WM_dice,T1_CSF_dice,FLAIR_GM_dice,FLAIR_WM_dice,FLAIR_CSF_dice)';
     mean_mat=cat(1,mean(T1_GM_dice),mean(T1_WM_dice),mean(T1_CSF_dice),mean(FLAIR_GM_dice),mean(FLAIR_WM_dice),mean(FLAIR_CSF_dice))';
     std_mat=cat(1,std(T1_GM_dice),std(T1_WM_dice),std(T1_CSF_dice),std(FLAIR_GM_dice),std(FLAIR_WM_dice),std(FLAIR_CSF_dice))';
-    mean_mat
-    std_mat
     
+    r_mat=cat(1,T1_GM_dice,T1_WM_dice,T1_CSF_dice)';
+    mean_mat=cat(1,mean(T1_GM_dice),mean(T1_WM_dice),mean(T1_CSF_dice))';
+    std_mat=cat(1,std(T1_GM_dice),std(T1_WM_dice),std(T1_CSF_dice))';
+        
     final_mat=cat(1,r_mat,mean_mat,std_mat);
     
     T = array2table(final_mat);

@@ -1,12 +1,13 @@
 from pathlib import Path
-from sys import breakpointhook
-from tkinter import N
+# from sys import breakpointhook
+# from tkinter import N
 import numpy as np
 import nibabel as nib
-import numpy_indexed as npi
-from .tissue_map import calc_prob_sum1
+# import numpy_indexed as npi
+# from .tissue_map import calc_prob_sum1
 import pandas as pd
-import matplotlib.pyplot as plt
+
+# import matplotlib.pyplot as plt
 
 image_path = Path("atlas/data/test-set/testing-images")
 
@@ -28,7 +29,7 @@ def segment_intensity_only(image, tissue_maps):
     for intensity, prob in enumerate(csf):
         image_csf[image_csf == intensity] = prob
 
-    stacked = np.stack((image_bg, image_csf, image_wm, image_gm))
+    stacked = np.stack((image_bg, image_csf, image_gm, image_wm), axis=0)
     labels = np.argmax(stacked, axis=0)
 
     return stacked, labels
@@ -54,8 +55,8 @@ if __name__ == "__main__":
     image_files = list(image_path.rglob("*nii.gz"))
     mask_files = [
         str(i)
-        .replace("testing-images", "testing-mask")
-        .replace(".nii.gz", "_1C.nii.gz")
+            .replace("testing-images", "testing-mask")
+            .replace(".nii.gz", "_1C.nii.gz")
         for i in image_files
     ]
     images = [nib.load(i).get_fdata() for i in image_files]
