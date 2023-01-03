@@ -47,10 +47,8 @@ def dice_coef_multilabel(y_true, y_pred):
     vdis = np.vectorize(dis)
 
     for label in numLabels:
-
         y_p = vdis(y_pred, label)
         y_t = vdis(y_true, label)
-
         score = dice(y_t, y_p)
         dice_list.append(score)
 
