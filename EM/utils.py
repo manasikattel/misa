@@ -21,11 +21,11 @@ def flatten_img(img_3d, mode):
     if mode == '3d':
         x, y, z = img_3d.shape
         img_2d = img_3d.reshape(x * y * z, 1)
-        img_2d = np.array(img_2d, dtype=np.float)
+        img_2d = np.array(img_2d, dtype=np.float32)
     elif mode == '2d':
         x, y = img_3d.shape
         img_2d = img_3d.reshape(x * y, 1)
-        img_2d = np.array(img_2d, dtype=np.float)
+        img_2d = np.array(img_2d, dtype=np.float32)
     return img_2d
 
 

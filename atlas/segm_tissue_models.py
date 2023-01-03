@@ -29,7 +29,7 @@ def segment_intensity_only(image, tissue_maps):
     for intensity, prob in enumerate(csf):
         image_csf[image_csf == intensity] = prob
 
-    stacked = np.stack((image_bg, image_csf, image_gm, image_wm), axis=0)
+    stacked = np.stack((image_bg, image_csf, image_wm, image_gm), axis=0)
     labels = np.argmax(stacked, axis=0)
 
     return stacked, labels

@@ -3,7 +3,7 @@ import nibabel as nib
 import matplotlib.pyplot as plt
 from pathlib import Path
 
-output_folder = Path("../Elastix/training_ours_reg/")
+output_folder = Path("../Elastix/training_ours_reg/processed")
 
 image_files = [i for i in (output_folder / Path("training-images")).rglob("*.nii.gz")]
 label_files = [

@@ -12,7 +12,7 @@ from intensity_normalization.normalize.fcm import FCMNormalize
 from scipy.ndimage._filters import gaussian_filter
 
 
-datadir = Path("data/project_data/")
+datadir = Path("D:\marwan\MSc\Spain\MISA\misa\TrainingValidationTestSets")
 
 image_files = [
     Path(str(i) + f"/{str(i.stem)}.nii.gz")
@@ -44,31 +44,30 @@ def save_hist_matched(image_dir, reference_image_path):
     image_files = [
         i for i in image_dir.rglob("*_preprocessed.nii.gz") if "seg" not in str(i)
     ]
-    images_prep = [sitk.ReadImage(i) for i in image_files]
-    reference_image = sitk.ReadImage(reference_image_path)
+    images_prep = [sitk.ReadImage(str(i)) for i in image_files]
+    reference_image = sitk.ReadImage(str(reference_image_path))
     i = 0
     for image in tqdm(images_prep):
         matched = histogram_matching(image, reference_image)
         save_path = image_files[i].parent / image_files[i].name.replace(
             ".nii.gz", "_histmatched.nii.gz"
         )
-        sitk.WriteImage(matched, save_path)
+        sitk.WriteImage(matched, str(save_path))
         i = i + 1
 
-
+print(image_files)
 if __name__ == "__main__":
-    images = [sitk.ReadImage(i) for i in image_files]
-    print("preprocessing...")
+    # images = [sitk.ReadImage(str(i)) for i in image_files]
     # for i in tqdm(range(len(images))):
     #     preprocessed = preprocess(images[i])
     #     save_path = image_files[i].parent / image_files[i].name.replace(
     #         ".nii.gz", "_preprocessed.nii.gz"
     #     )
-    #     sitk.WriteImage(preprocessed, save_path)
+    #     sitk.WriteImage(preprocessed, str(save_path))
     #     print(f"Preprocessed image saved to {save_path}")
 
     reference_image_path = (
-        datadir / "Training_Set/IBSR_12" / "IBSR_12_preprocessed.nii.gz"
+        datadir / "Validation_Set/IBSR_12" / "IBSR_12_preprocessed.nii.gz"
     )
     print("Histogram Matching...")
 

@@ -21,16 +21,18 @@ from utils import read_img, flatten_img, get_features
 # data_path = Path('./data')
 # data_folders = os.listdir(data_path)
 
-images_path = Path('../test-set/testing-images')
-labels_path = Path('../test-set/testing-labels')
+processed = True
+split_type = 'Validation'
+images_path = Path(f'../TrainingValidationTestSets/{split_type}_Set')
+# labels_path = Path('../test-set/testing-labels')
 # masks_path = Path('../Elastix/training_reg/non_rigid_transform.txt/True/1000.nii.gz/training_mask')
 
 data_files = os.listdir(images_path)
-labels_files = os.listdir(labels_path)
+# labels_files = os.listdir(labels_path)
 # masks_files = os.listdir(masks_path)
 
 data_files.sort(key=lambda x: x.split('.')[0])
-labels_files.sort(key=lambda x: x.split('_')[0])
+# labels_files.sort(key=lambda x: x.split('_')[0])
 # masks_files.sort(key=lambda x: x.split('_')[0])
 
 max_iter = 50
@@ -49,7 +51,7 @@ visualize = False
 blur_sigmas = [None]
 # init_types = ['kmeans', 'random', 'atlas', 'tissue', 'atlas_tissue']
 # mean_intensity, _ = read_img('../Elastix/training_reg/non_rigid_transform.txt/True/1000.nii.gz/mean_image.nii')
-init_types = ['atlas', 'kmeans']
+init_types = ['atlas']
 # init_types = ['tissue', 'atlas_tissue']
 
 # kmeans init + mni + into
@@ -61,17 +63,24 @@ init_types = ['atlas', 'kmeans']
 # init_type = both/tissue models/kmeans
 # into_EM true/false if kmeans and into em==false do not run
 # check mni experiment missing
-tissue_maps = pd.read_csv("prob_df_no1_255.csv")
+# tissue_maps = pd.read_csv("prob_df_no1_255.csv")
+tissue_maps = None
 # whteher u want the atlas  into EM or  not
 # todo run into_EM=False and atlas ours
-for into_EM in [False]:
+for into_EM in [True]:
     # whether u want the prob. atlas to be ours or the mni one
     for atlas_type in ['ours']:
         # loading the atlas from the dict
-        atlas_testing_path = Path(f'../Elastix/training_ours_reg/')
+        atlas_testing_path = Path(f'./training_ours_reg/')
+        if processed:
+            atlas_testing_path = atlas_testing_path / Path('processed') / Path(f'{split_type}_Set')
+        else:
+            atlas_testing_path = atlas_testing_path / Path('unprocessed') / Path(f'{split_type}_Set')
+
         for blur_sigma in blur_sigmas:
             for use_T2 in [False]:
-                for data_folder, labels_file in zip(data_files, labels_files):
+                # for data_folder, labels_file in zip(data_files, labels_files):
+                for data_folder in data_files:
 
                     atlas_subject_path = atlas_testing_path / Path(data_folder)
 
@@ -88,15 +97,19 @@ for into_EM in [False]:
                     atlas_model_WM = flatten_img(atlas_model_WM, mode='3d')
 
                     # stacking the atlases along the 2nd dim
-                    atlas_model = np.stack((atlas_model_BG, atlas_model_CSF, atlas_model_GM, atlas_model_WM),
+                    atlas_model = np.stack((atlas_model_BG, atlas_model_CSF, atlas_model_WM, atlas_model_GM),
                                            axis=1).squeeze()
 
                     del atlas_model_BG, atlas_model_CSF, atlas_model_GM, atlas_model_WM
 
                     # reading patients files/gt
-                    T1_fileName = images_path / data_folder
+                    if processed:
+                        T1_fileName = images_path / data_folder / Path(data_folder + '_preprocessed.nii.gz')
+                    else:
+                        T1_fileName = images_path / data_folder / Path(data_folder + '.nii.gz')
+
                     T2_fileName = images_path / data_folder
-                    gt_fileName = labels_path / labels_file
+                    gt_fileName = images_path / data_folder / Path(data_folder + '_seg.nii.gz')
 
                     T1, T1_affine = read_img(filename=T1_fileName, blur_sigma=blur_sigma)
                     if use_T2:
@@ -107,13 +120,15 @@ for into_EM in [False]:
                     gt, gt_affine = read_img(filename=gt_fileName)
 
                     gt[(gt != 0) & (gt != 1) & (gt != 2) & (gt != 3)] = 0
+                    gt = gt.squeeze()
+                    T1 = T1.squeeze()
 
                     # getting the features it can be T1 or (T1,T2)
                     stacked_features, T1_masked, T2_masked = get_features(T1, T2, gt, use_T2)
 
                     # getting the tissue model prob. map for the test set
-                    tissue_model, _ = segment_intensity_only(normalize(T1_masked, 255), tissue_maps)
-                    tissue_model = tissue_model.reshape(4, -1).transpose()
+                    # tissue_model, _ = segment_intensity_only(normalize(T1_masked, 255), tissue_maps)
+                    # tissue_model = tissue_model.reshape(4, -1).transpose()
 
                     for init_type in init_types:
                         if atlas_type == 'mni' and init_type == 'kmeans' and into_EM == False:
@@ -198,8 +213,9 @@ for into_EM in [False]:
 
                         CSF_Label = list(set([0, 1, 2, 3]).difference(set([0, GM_Label, WM_Label])))[0]
 
-                        my_dict = {0: 0, CSF_Label: 1, GM_Label: 3, WM_Label: 2}
-                        print(my_dict)
+                        # my_dict = {0: 0, CSF_Label: 1, GM_Label: 3, WM_Label: 2}
+                        # print(my_dict)
+                        my_dict = {0: 0, 1: 1, 2: 3, 3: 2}
 
                         if init_type == 'kmeans':
                             seg_mask_em = np.vectorize(my_dict.get)(seg_mask_em)
@@ -217,14 +233,16 @@ for into_EM in [False]:
                             results_dict['kmeans_time'] = em.k_means_time
                             print('kmeans dice', dice_list_kmeans)
                         elif init_type == 'atlas' or init_type == 'tissue' or init_type == 'atlas_tissue':
+                            # my_dict_atlas = {0: 0, 1: 1, 2: 3, 3: 2}
                             seg_mask_atlas = em.atlas_model_mask
+                            # seg_mask_atlas = np.vectorize(my_dict_atlas.get)(seg_mask_atlas)
                             nib.save(nib.Nifti1Image(seg_mask_atlas, affine=gt_affine),
                                      out_folder / Path('atlas_mask.nii'))
-                            my_dict_atlas = {0: 0, 1: 1, 2: 3, 3: 2}
+                            #
+                            # seg_mask_em = np.vectorize(my_dict_atlas.get)(seg_mask_em)
 
-                            seg_mask_em = np.vectorize(my_dict_atlas.get)(seg_mask_em)
+                            dice_list_atlas = dice_coef_multilabel(gt, seg_mask_atlas)
 
-                            dice_list_atlas = dice_coef_multilabel(gt, np.vectorize(my_dict_atlas.get)(seg_mask_atlas))
                             results_dict['atlas_dice_CSF'] = dice_list_atlas[1]
                             results_dict['atlas_dice_GM'] = dice_list_atlas[2]
                             results_dict['atlas_dice_WM'] = dice_list_atlas[3]
@@ -243,7 +261,7 @@ for into_EM in [False]:
                                 post_atlas_mask = em.get_post_atlas_mask()
 
                             # post_atlas_mask[np.isin(post_atlas_mask, list(my_dict.keys())) == 0] = 0
-                            post_atlas_mask = np.vectorize(my_dict_atlas.get)(post_atlas_mask)
+                            # post_atlas_mask = np.vectorize(my_dict_atlas.get)(post_atlas_mask)
 
                             nib.save(nib.Nifti1Image(post_atlas_mask, affine=gt_affine),
                                      out_folder / Path('post_atlas_mask.nii'))
@@ -269,4 +287,4 @@ for into_EM in [False]:
 
 # saving the results with the ablation to a dataframe
 df = pd.DataFrame(results_list)
-df.to_csv('results_tissue_model_into_em_false_ours_3.csv')
+df.to_csv('results_atlas_into_processed_nohist.csv')
