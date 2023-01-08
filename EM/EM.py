@@ -90,7 +90,6 @@ class EM:
         seg_mask = np.zeros_like(recovered_img)
         for i in range(len(mean_values)):
             seg_mask[recovered_img == mean_values[i]] = i
-
         return seg_mask
 
     # initalization the centeriod with kmeans

@@ -21,7 +21,7 @@ from utils import read_img, flatten_img, get_features
 # data_path = Path('./data')
 # data_folders = os.listdir(data_path)
 
-processed = True
+processed_bool = [False, True]
 split_type = 'Validation'
 images_path = Path(f'../TrainingValidationTestSets/{split_type}_Set')
 # labels_path = Path('../test-set/testing-labels')
@@ -38,8 +38,6 @@ data_files.sort(key=lambda x: x.split('.')[0])
 max_iter = 50
 n_clusters = 3
 error = 0.1
-# to keep track for the results for ablation studies
-results_list = []
 output_path = Path('./new_challenge')
 output_path.mkdir(parents=True, exist_ok=True)
 
@@ -51,7 +49,7 @@ visualize = False
 blur_sigmas = [None]
 # init_types = ['kmeans', 'random', 'atlas', 'tissue', 'atlas_tissue']
 # mean_intensity, _ = read_img('../Elastix/training_reg/non_rigid_transform.txt/True/1000.nii.gz/mean_image.nii')
-init_types = ['atlas']
+init_types = ['tissue', 'atlas_tissue']
 # init_types = ['tissue', 'atlas_tissue']
 
 # kmeans init + mni + into
@@ -63,11 +61,21 @@ init_types = ['atlas']
 # init_type = both/tissue models/kmeans
 # into_EM true/false if kmeans and into em==false do not run
 # check mni experiment missing
-# tissue_maps = pd.read_csv("prob_df_no1_255.csv")
-tissue_maps = None
+
+# tissue_maps = None
 # whteher u want the atlas  into EM or  not
 # todo run into_EM=False and atlas ours
-for into_EM in [True]:
+into_EM = True
+# for into_EM in [True]:
+for processed in processed_bool:
+    # to keep track for the results for ablation studies
+    results_list = []
+
+    if processed:
+        tissue_maps = pd.read_csv("tissue_map_imputed_processed.csv")
+    else:
+        tissue_maps = pd.read_csv("tissue_map_imputed_unprocessed.csv")
+
     # whether u want the prob. atlas to be ours or the mni one
     for atlas_type in ['ours']:
         # loading the atlas from the dict
@@ -97,14 +105,14 @@ for into_EM in [True]:
                     atlas_model_WM = flatten_img(atlas_model_WM, mode='3d')
 
                     # stacking the atlases along the 2nd dim
-                    atlas_model = np.stack((atlas_model_BG, atlas_model_CSF, atlas_model_WM, atlas_model_GM),
+                    atlas_model = np.stack((atlas_model_BG, atlas_model_CSF, atlas_model_GM, atlas_model_WM),
                                            axis=1).squeeze()
 
                     del atlas_model_BG, atlas_model_CSF, atlas_model_GM, atlas_model_WM
 
                     # reading patients files/gt
                     if processed:
-                        T1_fileName = images_path / data_folder / Path(data_folder + '_preprocessed.nii.gz')
+                        T1_fileName = images_path / data_folder / Path(data_folder + '_preprocessed_histmatched.nii.gz')
                     else:
                         T1_fileName = images_path / data_folder / Path(data_folder + '.nii.gz')
 
@@ -127,8 +135,8 @@ for into_EM in [True]:
                     stacked_features, T1_masked, T2_masked = get_features(T1, T2, gt, use_T2)
 
                     # getting the tissue model prob. map for the test set
-                    # tissue_model, _ = segment_intensity_only(normalize(T1_masked, 255), tissue_maps)
-                    # tissue_model = tissue_model.reshape(4, -1).transpose()
+                    tissue_model, _ = segment_intensity_only(normalize(T1_masked, 255), tissue_maps)
+                    tissue_model = tissue_model.reshape(4, -1).transpose()
 
                     for init_type in init_types:
                         if atlas_type == 'mni' and init_type == 'kmeans' and into_EM == False:
@@ -153,12 +161,12 @@ for into_EM in [True]:
                         results_dict['into_EM'] = into_EM
                         results_dict['init_type'] = init_type
                         results_dict['patient_id'] = data_folder
-                        results_dict['blur_sigma'] = blur_sigma
                         results_dict['atlas_type'] = atlas_type
+                        results_dict['blur_sigma'] = blur_sigma
 
                         out_folder = output_path / data_folder / Path(
                             'init_' + init_type + '_atlas_' + atlas_type + '_blurred_' + str(
-                                blur_sigma) + '_into_EM_' + str(into_EM))
+                                blur_sigma) + '_into_EM_' + str(into_EM) + '_processed_' + str(processed))
                         out_folder.mkdir(parents=True, exist_ok=True)
 
                         # saving the T1 masked image after removing skull
@@ -285,6 +293,6 @@ for into_EM in [True]:
                         print(dice_list_em)
                         results_list.append(results_dict)
 
-# saving the results with the ablation to a dataframe
-df = pd.DataFrame(results_list)
-df.to_csv('results_atlas_into_processed_nohist.csv')
+    # saving the results with the ablation to a dataframe
+    df = pd.DataFrame(results_list)
+    df.to_csv(f'results_rest_into_processed_{processed}.csv')

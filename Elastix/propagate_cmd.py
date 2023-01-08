@@ -5,24 +5,17 @@ from pathlib import Path
 
 import SimpleITK as sitk
 
-#todo change this to original dataset
 images_path = Path('../TrainingValidationTestSets/Training_Set')
 labels_path = Path('../TrainingValidationTestSets/Training_Set')
-# masks_path = Path('../test-set/testing-mask')
 
 data_files = os.listdir(images_path)
 labels_files = os.listdir(labels_path)
-# masks_files = os.listdir(masks_path)
 
 sys.setrecursionlimit(4000)
 
 data_files.sort(key=lambda x: x.split('.')[0])
 labels_files.sort(key=lambda x: x.split('_')[0])
-# masks_files.sort(key=lambda x: x.split('_')[0])
-use_mask = True
-# data_files[0]
-# reg_methods = ['affine_transform.txt', 'non_rigid_transform.txt', 'rigid_transform.txt']
-# reg_param_texts = ['affine', 'bspline', 'rigid', ]
+
 
 reg_methods = ['non_rigid_transform.txt']
 reg_param_texts = ['bspline']
@@ -73,6 +66,11 @@ for reg_method, reg_param_text in zip(reg_methods, reg_param_texts):
 
         parameter0["ResampleInterpolator"] = ["FinalNearestNeighborInterpolator"]
         parameter1["ResampleInterpolator"] = ["FinalNearestNeighborInterpolator"]
+
+        myfilter = sitk.TransformixImageFilter()
+
+        myfilter.SetTransformParameterMap(parameter0)
+        myfilter.AddTransformParameterMap(parameter1)
 
         myfilter.SetMovingImage(moving_label)
         registered_label = myfilter.Execute()
