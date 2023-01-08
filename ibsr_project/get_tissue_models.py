@@ -8,7 +8,8 @@ import pandas as pd
 import statsmodels.api as sm
 import SimpleITK as sitk
 
-output_folder = Path("training_ours_reg/raw")
+# output_folder = Path("training_ours_reg/raw")
+output_folder = Path('../Elastix/training_ours_reg/processed')
 
 image_files = [i for i in (output_folder / Path("training-images")).rglob("*.nii.gz")]
 label_files = [
@@ -24,7 +25,6 @@ BGLabel = 0
 
 
 def visualize(image, label, filename):
-
     filename.parent.mkdir(exist_ok=True, parents=True)
     fig, ax = plt.subplots(1, 3)
     print(np.unique(label))
@@ -65,7 +65,7 @@ def calc_prob_sum1(image, label, visualize=True):
     # / intensity_hist
 
     p_intensity_csf = (
-        np.bincount(csf, minlength=np.amax(onlybrain) + 1) / intensity_hist
+            np.bincount(csf, minlength=np.amax(onlybrain) + 1) / intensity_hist
     )
     p_intensity_gm = np.bincount(gm, minlength=np.amax(onlybrain) + 1) / intensity_hist
 
@@ -87,7 +87,6 @@ def calc_prob_sum1(image, label, visualize=True):
 
 
 def calc_prob(image, label):
-
     image = image.astype(int)
 
     csf = image * (label == CSFLabel)
