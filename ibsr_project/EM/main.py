@@ -1,39 +1,25 @@
-import copy
 import os
 import pickle
 from pathlib import Path
 import pandas as pd
-import pylab
 import logging
 import sys
-
 from metrics import dice_coef_multilabel
-
 from atlas.segm_tissue_models import segment_intensity_only, normalize
-
 logging.getLogger().addHandler(logging.StreamHandler(sys.stdout))
 import nibabel as nib
 from EM import EM
-import matplotlib.pyplot as plt
 import numpy as np
 from utils import read_img, flatten_img, get_features
 
-# data_path = Path('./data')
-# data_folders = os.listdir(data_path)
 
 processed_bool = [False, True]
 split_type = 'Validation'
 images_path = Path(f'../TrainingValidationTestSets/{split_type}_Set')
-# labels_path = Path('../test-set/testing-labels')
-# masks_path = Path('../Elastix/training_reg/non_rigid_transform.txt/True/1000.nii.gz/training_mask')
 
 data_files = os.listdir(images_path)
-# labels_files = os.listdir(labels_path)
-# masks_files = os.listdir(masks_path)
 
 data_files.sort(key=lambda x: x.split('.')[0])
-# labels_files.sort(key=lambda x: x.split('_')[0])
-# masks_files.sort(key=lambda x: x.split('_')[0])
 
 max_iter = 50
 n_clusters = 3
@@ -45,28 +31,10 @@ use_tissue_model = False
 use_atlas_model = False
 
 visualize = False
-# blur_sigmas=[None, 0.1, 0.3, 0.5, 0.7, 1]
 blur_sigmas = [None]
-# init_types = ['kmeans', 'random', 'atlas', 'tissue', 'atlas_tissue']
-# mean_intensity, _ = read_img('../Elastix/training_reg/non_rigid_transform.txt/True/1000.nii.gz/mean_image.nii')
 init_types = ['tissue', 'atlas_tissue']
-# init_types = ['tissue', 'atlas_tissue']
-
-# kmeans init + mni + into
-# use (atlas_ours * atlas tissue model) init into_EM True/False
-# use (atlas tissue model) into_EM True/False / different atlas tissue model init
-# use Kmeans atlas_init  + (atlas_ours * atlas tissue model) into_EM True
-
-# atlas_type =both / tissue model alone
-# init_type = both/tissue models/kmeans
-# into_EM true/false if kmeans and into em==false do not run
-# check mni experiment missing
-
-# tissue_maps = None
-# whteher u want the atlas  into EM or  not
-# todo run into_EM=False and atlas ours
 into_EM = True
-# for into_EM in [True]:
+
 for processed in processed_bool:
     # to keep track for the results for ablation studies
     results_list = []

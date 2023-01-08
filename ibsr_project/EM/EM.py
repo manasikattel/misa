@@ -8,7 +8,6 @@ from scipy.stats import multivariate_normal
 from sklearn.cluster._kmeans import KMeans
 import time
 
-from utils import plot_gmm
 
 logger = logging.getLogger(__name__)
 # logger.addHandler(logging.StreamHandler(sys.stdout))
