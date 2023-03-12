@@ -1,8 +1,8 @@
 <application>
   <component name="FileTypeManager" version="17">
     <extensionMap>
-      <mapping pattern="free_lunch_hetero" type="PLAIN_TEXT" />
       <mapping pattern="skin" type="PLAIN_TEXT" />
+      <mapping pattern="free_lunch_hetero" type="PLAIN_TEXT" />
       <mapping pattern="attribute_endo" type="PLAIN_TEXT" />
       <mapping pattern="register" type="Python" />
     </extensionMap>
