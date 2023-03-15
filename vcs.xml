@@ -66,6 +66,10 @@
           <option name="url" value="http://github.com" />
           <option name="userName" value="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" />
         </UrlAndUserName>
+        <UrlAndUserName>
+          <option name="url" value="https://github.com/zju-vipa/CMI.git" />
+          <option name="userName" value="" />
+        </UrlAndUserName>
       </list>
     </option>
     <option name="cloneParentDir" value="D:\marwan\MSc" />
