@@ -3,7 +3,7 @@
   <inspection_tool class="PyPackageRequirementsInspection" enabled="true" level="WARNING" enabled_by_default="true">
     <option name="ignoredPackages">
       <value>
-        <list size="80">
+        <list size="83">
           <item index="0" class="java.lang.String" itemvalue="tqdm" />
           <item index="1" class="java.lang.String" itemvalue="easydict" />
           <item index="2" class="java.lang.String" itemvalue="opencv-python" />
@@ -84,6 +84,9 @@
           <item index="77" class="java.lang.String" itemvalue="scikit-learn" />
           <item index="78" class="java.lang.String" itemvalue="SimpleITK" />
           <item index="79" class="java.lang.String" itemvalue="xgboost" />
+          <item index="80" class="java.lang.String" itemvalue="kornia" />
+          <item index="81" class="java.lang.String" itemvalue="termcolor" />
+          <item index="82" class="java.lang.String" itemvalue="einops" />
         </list>
       </value>
     </option>
