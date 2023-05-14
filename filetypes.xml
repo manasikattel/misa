@@ -6,6 +6,7 @@
       <mapping pattern="free_lunch_hetero" type="PLAIN_TEXT" />
       <mapping pattern="cifar10_resnet32_CE_train" type="PLAIN_TEXT" />
       <mapping pattern="attribute_endo" type="PLAIN_TEXT" />
+      <mapping pattern="flampy_train_test_split" type="PLAIN_TEXT" />
       <mapping pattern="register" type="Python" />
     </extensionMap>
   </component>
